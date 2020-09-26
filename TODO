@@ -1,0 +1,7 @@
+github:
+
+- github auth
+- rate limit tracking and  polling frequency
+- test (at least one ) (may need to move the api to ghpr struct )
+- add healthchek for kubernetes liveness and readiness go routine httpd  ?
+

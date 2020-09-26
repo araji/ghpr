@@ -1,14 +1,26 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"time"
 )
 
 func main() {
-	ghc := GHClient{"araji", "testrepo"}
-	slacker := Slacker{"araji", "password"}
-	fmt.Printf("getting push requests\n")
-	ghc.GetPushRequests()
-	slacker.SendMessage(&SlackMessage{Channel: "mychannel", Text: "ALERT"})
 
+	ghc := GHClient{"octocat", "hello-world"}
+	slacker := Slacker{"araji", "password"}
+
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			over, under, err := ghc.GetPushRequests(365 * 24)
+			if err != nil {
+				log.Println("Fetch Error will be ignored ")
+			}
+			log.Println("over threshold", over, "under threshold := ", under)
+			slacker.SendMessage(&SlackMessage{Channel: "mychannel", Text: "ALERT"})
+		}
+	}
 }
