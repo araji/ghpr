@@ -29,16 +29,21 @@ type GHPR struct {
 	Number    int       `json:"number"`
 	State     string    `json:"state"`
 	Title     string    `json:"title"`
+	HTMLURL   string    `json:"html_url"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 //GetPushRequests return list of all push requests
 //pull requests older that threshold (hours ) will need to be reviewed
-func (ghc *GHClient) GetPushRequests(threshold int) (over, under int, err error) {
+func (ghc *GHClient) GetPushRequests(threshold int) (over, under map[int]GHPR, err error) {
 	var ghpr []GHPR
 	re := regexp.MustCompile("rel=\"next\"")
 	var pageNumber int = 1
-	var overThreshold, underThreshold int
+	//var overThreshold int
+	//var underThreshold int
+	overThresholdPR := make(map[int]GHPR)
+	underThresholdPR := make(map[int]GHPR)
+
 	var lastPage bool = false
 	now := time.Now()
 	log.Printf("checking repo: github.com/%s/%s\n ", ghc.owner, ghc.repo)
@@ -48,7 +53,7 @@ func (ghc *GHClient) GetPushRequests(threshold int) (over, under int, err error)
 		if err != nil || resp.StatusCode != http.StatusOK {
 			log.Println("unable to get request")
 			err = fmt.Errorf("Failed to fetch data from url %s ", url)
-			return 0, 0, err
+			return nil, nil, err
 		}
 		defer resp.Body.Close()
 		linkHeader := resp.Header.Get("Link")
@@ -60,12 +65,14 @@ func (ghc *GHClient) GetPushRequests(threshold int) (over, under int, err error)
 		json.Unmarshal(body, &ghpr)
 		for _, pr := range ghpr {
 			if now.Sub(pr.CreatedAt).Hours() >= float64(threshold) {
-				overThreshold++
+				//overThreshold++
+				overThresholdPR[pr.Number] = pr
 			} else {
-				underThreshold++
+				//underThreshold++
+				underThresholdPR[pr.Number] = pr
 			}
 		}
 	}
 
-	return overThreshold, underThreshold, nil
+	return overThresholdPR, underThresholdPR, nil
 }

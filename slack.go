@@ -1,29 +1,51 @@
 package main
 
-import "fmt"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+)
 
-//Slacker account info to write to specific channel
-type Slacker struct {
-	username string
-	password string
+var (
+	//export SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
+	webhookURL string = os.Getenv("SLACK_WEBHOOK_URL")
+)
+
+//JSONMessage holds message to send to slack
+type JSONMessage struct {
+	Text string `json:"text"`
 }
 
-//SlackMessage json struct including channel and message to send
-type SlackMessage struct {
-	Channel string `json:"channel"`
-	Text    string `json:"text"`
+//JSONColoredMessage colored message inner block
+type JSONColoredMessage struct {
+	Color     string   `json:"color"`
+	MarkdwnIn []string `json:"mrkdwn_in"`
+	Text      string   `json:"text"`
 }
 
-/*SendMessage to slack channel
-POST https://slack.com/api/chat.postMessage
-Content-type: application/json
-Authorization: Bearer xoxb-your-token
-{
-  "channel": "YOUR_CHANNEL_ID",
-  "text": "Hello world :tada:"
+//ColoredMessage block to send to slack webhook
+type ColoredMessage struct {
+	Attachements []JSONColoredMessage `json:"attachments"`
 }
-*/
-func (s *Slacker) SendMessage(slackMessage *SlackMessage) error {
-	fmt.Printf("user %s is sending message : %s to channel %s \n", s.username, slackMessage.Text, slackMessage.Channel)
-	return nil
+
+//SendSlackMessage Using app wehbook
+func SendSlackMessage(message, color string) {
+
+	msgBlock := JSONColoredMessage{Color: color, MarkdwnIn: []string{"text", "fields"}, Text: message}
+	slackMessage := &ColoredMessage{[]JSONColoredMessage{msgBlock}}
+	//jsonMessage := JSONMessage{message}
+	json, err := json.Marshal(slackMessage)
+	log.Println(string(json))
+	if err != nil {
+		log.Printf("Error while serializing data :%s \n", err)
+	}
+	resp, err := http.Post(webhookURL, "Application/json", bytes.NewBuffer(json))
+	if err != nil {
+		log.Printf("Error while submitting slack webhook request :%s \n", err)
+	}
+	defer resp.Body.Close()
+	fmt.Println(resp.StatusCode)
 }
