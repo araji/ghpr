@@ -1,17 +1,16 @@
-ALL:
-env variables flag.StringVar(&Consul_URL, "consul-url", LookupEnvOrString("CONSUL_URL", Consul_URL), "service discovery url")
-	flag.StringVar(&Statsd_URL, "statsd-url", LookupEnvOrString("STATSD_URL", Statsd_URL), "statsd's host:port")
-	
-
 github:
 
 - github auth
+- try graphql
 - rate limit tracking and  polling frequency
 - test (at least one ) (may need to move the api to ghpr struct )
 - add healthchek for kubernetes liveness and readiness go routine httpd  ?
-
+- grab the number of pages from the first response and iterate ?
+- why build the request if it is already in the link header !!!
+- Implement retries
 
 slack:
 - oauth2 
 - catch error
 
+-Tests ???

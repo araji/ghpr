@@ -22,9 +22,7 @@ type GHClient struct {
 	owner, repo string
 }
 
-//GHPR github push request info we are interested in
-// date (time.Time) 2020-07-20 02:17:13 +0000 UTC
-// date (string)    2020-07-20 02:17:13Z
+//GHPR subset of github push request info , we focus on what we need
 type GHPR struct {
 	Number    int       `json:"number"`
 	State     string    `json:"state"`
@@ -33,20 +31,20 @@ type GHPR struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-//GetPushRequests return list of all push requests
-//pull requests older that threshold (hours ) will need to be reviewed
+//GetPushRequests returns list of all push requests in two maps data structures
+//we check the link header for the absence of "next page" signaling that we need to stop iterating
+//if any of the requests generates an error or returns a non 200 , we return error to the caller.
 func (ghc *GHClient) GetPushRequests(threshold int) (over, under map[int]GHPR, err error) {
 	var ghpr []GHPR
 	re := regexp.MustCompile("rel=\"next\"")
 	var pageNumber int = 1
-	//var overThreshold int
-	//var underThreshold int
 	overThresholdPR := make(map[int]GHPR)
 	underThresholdPR := make(map[int]GHPR)
 
 	var lastPage bool = false
 	now := time.Now()
 	log.Printf("checking repo: github.com/%s/%s\n ", ghc.owner, ghc.repo)
+
 	for lastPage == false {
 		url := fmt.Sprintf("https://%s/repos/%s/%s/pulls?per_page=%d&page=%d", githubAPI, ghc.owner, ghc.repo, ppage, pageNumber)
 		resp, err := http.Get(url)
@@ -65,10 +63,8 @@ func (ghc *GHClient) GetPushRequests(threshold int) (over, under map[int]GHPR, e
 		json.Unmarshal(body, &ghpr)
 		for _, pr := range ghpr {
 			if now.Sub(pr.CreatedAt).Hours() >= float64(threshold) {
-				//overThreshold++
 				overThresholdPR[pr.Number] = pr
 			} else {
-				//underThreshold++
 				underThresholdPR[pr.Number] = pr
 			}
 		}

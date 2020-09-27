@@ -3,29 +3,58 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
+)
+
+//Colors Used for slack messages
+const (
+	RED   string = "#ff0000"
+	GREEN string = "#008000"
+	BLACK string = "#000000"
 )
 
 func main() {
 
-	ghc := GHClient{"uber", "makisu"}
+	//Chek Presences of Required Environment Variables.
+	SlackWebhook, sexists := os.LookupEnv("SLACK_WEBHOOK")
+	GitOwner, gexists := os.LookupEnv("GIT_OWNER")
+	GitRepo, rexists := os.LookupEnv("GIT_REPO")
+	threshold, texists := os.LookupEnv("PR_THRESHOLD")
+	pollPeriod, pexists := os.LookupEnv("POLL_PERIOD")
 
-	ticker := time.NewTicker(1 * time.Minute)
+	if !sexists || !gexists || !rexists || !texists || !pexists {
+		log.Fatalf("one of the required environment variables is not set ")
+	}
+	Threshold, ok := strconv.Atoi(threshold)
+	if ok != nil {
+		log.Fatalf("Threshold should be set to number of days , got :%s", threshold)
+	}
+	PollPeriod, ok := strconv.Atoi(pollPeriod)
+	if ok != nil || PollPeriod == 0 {
+		log.Fatalf("pollPeriod should be set to number of minutes between two polls and greater than 0 , got :%s", pollPeriod)
+	}
+
+	// Initialize GithubClient and TimeTicker based on provided PollingPeriod
+	// each tick pull pr list , send summary followed by details on the same slack channel
+	ghc := GHClient{GitOwner, GitRepo}
+	ticker := time.NewTicker(time.Duration(PollPeriod) * time.Minute)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
-			over, under, err := ghc.GetPushRequests(365 * 24)
+			over, under, err := ghc.GetPushRequests(Threshold * 24)
 			if err != nil {
 				log.Println("Fetch Error will be ignored ")
 			}
 			log.Println("over threshold", len(over), "under threshold := ", len(under))
-			SendSlackMessage(fmt.Sprintf("over threshold= %d , under threshold = %d ", len(over), len(under)), "#000000")
+			SendSlackMessage(SlackWebhook, fmt.Sprintf("over threshold= %d , under threshold = %d ", len(over), len(under)), BLACK)
 			for _, pr := range over {
-				SendSlackMessage(pr.HTMLURL, "#ff0000")
+				SendSlackMessage(SlackWebhook, pr.HTMLURL, RED)
 			}
 			for _, pr := range under {
-				SendSlackMessage(pr.HTMLURL, "#008000")
+				SendSlackMessage(SlackWebhook, pr.HTMLURL, GREEN)
 			}
 
 		}

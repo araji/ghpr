@@ -6,12 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-)
-
-var (
-	//export SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
-	webhookURL string = os.Getenv("SLACK_WEBHOOK_URL")
 )
 
 //JSONMessage holds message to send to slack
@@ -32,7 +26,7 @@ type ColoredMessage struct {
 }
 
 //SendSlackMessage Using app wehbook
-func SendSlackMessage(message, color string) {
+func SendSlackMessage(webhookURL, message, color string) {
 
 	msgBlock := JSONColoredMessage{Color: color, MarkdwnIn: []string{"text", "fields"}, Text: message}
 	slackMessage := &ColoredMessage{[]JSONColoredMessage{msgBlock}}

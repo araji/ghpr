@@ -1,24 +1,37 @@
-## sending slack messages using oauth2 
+## Summary:
 
-app credentials :
-
-https://api.slack.com/apps/A01BMJ27YDA
-
-1 - get the app secrets (see previous snapshot)
-2 - auth request
-
+- ghpr = http request to github api repository getting pull requests list 
+- slack = single function call that sends message preceded with a color flag .
+- main = checks presence of environment variables and  starts iterating at each tick time (pollling period) 
+- Dockerfile : minimize risks (just scratch base image and the built binary), no external library.
+image size around 7MB and was pushed to docker hub under araji/ghpr .
 
 
+## Usage :
 
-## Send messages using slack app webhook
+An example of environment variables that needs to be set are located in the env file  , export them in current shell session and run 
+$ go run .
+after a polliPeriod minites ,  you should see slack notifications appear:
 
-slack enable webhook in selected channel :
-
-![adding a webhook step](images/webhook.png)
-then should be able to run :
-
-curl -X POST -H 'Content-type: application/json' --data '{"text":"Hello, World!"}' https://hooks.slack.com/services/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
+![slack message](images/slack_messages.png)
 
 
+## running the binary
+export the variables and run the binary 
+$ ./ghpr 
+2020/09/26 20:55:57 checking repo: github.com/uber/makisu
+ 
+2020/09/26 20:55:58 over threshold 0 under threshold :=  0
+2020/09/26 20:55:58 {"attachments":[{"color":"#000000","mrkdwn_in":["text","fields"],"text":"over threshold= 0 , under threshold = 0 "}]}
+200
 
+
+##  build the container
+docker build -t ghpr:latest .
 ## run the container
+docker run --env-file env ghpr:latest
+
+##
+
+## Notes:
+without using oauth , the rate limit is very low .
