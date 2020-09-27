@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -41,5 +40,5 @@ func SendSlackMessage(webhookURL, message, color string) {
 		log.Printf("Error while submitting slack webhook request :%s \n", err)
 	}
 	defer resp.Body.Close()
-	fmt.Println(resp.StatusCode)
+
 }
