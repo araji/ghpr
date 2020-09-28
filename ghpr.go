@@ -37,7 +37,7 @@ type GHPR struct {
 func (ghc *GHClient) GetPushRequests(threshold int) (over, under map[int]GHPR, err error) {
 	var ghpr []GHPR
 	re := regexp.MustCompile("rel=\"next\"")
-	var pageNumber int = 1
+	pageNumber := 1
 	overThresholdPR := make(map[int]GHPR)
 	underThresholdPR := make(map[int]GHPR)
 
