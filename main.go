@@ -25,6 +25,7 @@ func main() {
 	pollPeriod, pexists := os.LookupEnv("POLL_PERIOD")
 
 	if !sexists || !gexists || !rexists || !texists || !pexists {
+		fmt.Printf("OWNER=%s, REPO= %s, Threshold= %s, POLL= %s \n\tWEBHOOK=%s\n", GitOwner, GitRepo, threshold, pollPeriod, SlackWebhook)
 		log.Fatalf("one of the required environment variables is not set ")
 	}
 	Threshold, ok := strconv.Atoi(threshold)
@@ -41,22 +42,20 @@ func main() {
 	ghc := GHClient{GitOwner, GitRepo}
 	ticker := time.NewTicker(time.Duration(PollPeriod) * time.Minute)
 	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			over, under, err := ghc.GetPushRequests(Threshold * 24)
-			if err != nil {
-				log.Println("Fetch Error will be ignored ")
-			}
-			log.Println("over threshold", len(over), "under threshold := ", len(under))
-			SendSlackMessage(SlackWebhook, fmt.Sprintf("over threshold= %d , under threshold = %d ", len(over), len(under)), BLACK)
-			for _, pr := range over {
-				SendSlackMessage(SlackWebhook, pr.HTMLURL, RED)
-			}
-			for _, pr := range under {
-				SendSlackMessage(SlackWebhook, pr.HTMLURL, GREEN)
-			}
-
+	for ; true; <-ticker.C {
+		over, under, err := ghc.GetPushRequests(Threshold * 24)
+		if err != nil {
+			log.Println("Fetch Error, skipping ... ")
+			continue
 		}
+		log.Println("over threshold", len(over), "under threshold := ", len(under))
+		SendSlackMessage(SlackWebhook, fmt.Sprintf("over threshold= %d , under threshold = %d ", len(over), len(under)), BLACK)
+		for _, pr := range over {
+			SendSlackMessage(SlackWebhook, pr.HTMLURL, RED)
+		}
+		for _, pr := range under {
+			SendSlackMessage(SlackWebhook, pr.HTMLURL, GREEN)
+		}
+
 	}
 }

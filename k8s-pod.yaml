@@ -1,4 +1,21 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghpr-cm-vars
+data:
+  GIT_OWNER: uber
+  GIT_REPO: makisu
+  PR_THRESHOLD: "365"
+  POLL_PERIOD: "1"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ghpr-sc-vars
+data:
+  SLACK_WEBHOOK: "aHR0cHM6Ly9ob29rcy5zbGFjay5jb20vc2VydmljZXMvVDAxQkczRVQ5SzQvQjAxQkQwV0FDNFYvNHpzZ2FsUGo1M3V4REpZWXRBaUdSRUpS"
+---
+apiVersion: v1
 kind: Pod
 metadata:
   name: github-pr
@@ -7,32 +24,11 @@ spec:
   - name: ghpr
     image: ghpr
     env:
-      - name: SECRET_WEBHOOK
+      - name: SLACK_WEBHOOK
         valueFrom:
           secretKeyRef:
-            name: ghpr-sc-var
-            value: SLACK_WEBHOOK
-
+            name: ghpr-sc-vars
+            key: SLACK_WEBHOOK
     envFrom:
     - configMapRef:
-      name: ghpr-cm-vars
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ghpr-cm-vars
-data:
-  GIT_OWNER: uber
-  GIT_REPO: makisu
-  PR_THRESHOLD: 365
-  POLL_PERIOD: 1
------
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ghpr-sc-vars
-data:
-  SLACK_WEBHOOK: aHR0cHM6Ly9ob29rcy5zbGFjay5jb20vc2VydmljZXMvVDAxQkczRVQ5SzQvQjAxQkQwV0FDNFYvNHpzZ2FsUGo1M3V4REpZWXRBaUdSRUpSCg==
- 
-
-
+        name: ghpr-cm-vars
