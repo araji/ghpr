@@ -11,15 +11,17 @@ import (
 )
 
 const (
-	githubAPI = "api.github.com"
-	ppage     = 50
+	ppage = 50
 )
 
 /*
 GHClient github client for a specific repo
 */
 type GHClient struct {
+	apiServer   string
 	owner, repo string
+	token       string
+	Client      *http.Client
 }
 
 //GHPR subset of github push request info , we focus on what we need
@@ -29,6 +31,15 @@ type GHPR struct {
 	Title     string    `json:"title"`
 	HTMLURL   string    `json:"html_url"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+//CreateGithubClient a githup api client
+func CreateGithubClient(apiServer, owner, repo, token string) *GHClient {
+	var client = &http.Client{
+		Timeout: time.Second * 10,
+	}
+	return &GHClient{apiServer, owner, repo, token, client}
+
 }
 
 //GetPushRequests returns list of all push requests in two maps data structures
@@ -46,8 +57,9 @@ func (ghc *GHClient) GetPushRequests(threshold int) (over, under map[int]GHPR, e
 	log.Printf("checking repo: github.com/%s/%s\n ", ghc.owner, ghc.repo)
 
 	for lastPage == false {
-		url := fmt.Sprintf("https://%s/repos/%s/%s/pulls?per_page=%d&page=%d", githubAPI, ghc.owner, ghc.repo, ppage, pageNumber)
-		resp, err := http.Get(url)
+
+		url := fmt.Sprintf("https://%s/repos/%s/%s/pulls?per_page=%d&page=%d", ghc.apiServer, ghc.owner, ghc.repo, ppage, pageNumber)
+		resp, err := ghc.Client.Get(url)
 		if err != nil || resp.StatusCode != http.StatusOK {
 			log.Println("unable to get request")
 			err = fmt.Errorf("Failed to fetch data from url %s ", url)

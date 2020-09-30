@@ -1,3 +1,7 @@
+# Warning
+Repo is a golang playground for myself to learn the language.
+
+
 ## Summary:
 
 - ghpr = http request to github api repository getting pull requests list 
