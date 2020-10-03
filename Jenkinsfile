@@ -40,7 +40,7 @@ pipeline {
                 dir("$WORKSPACE") {
                     script {
                         docker.withRegistry('https://index.docker.io/v1/','DockerHub') {
-                            dockerImage.push("$BRANCH_NAME-$BUILD_NUMBER")
+                            dockerImage.push("$env.BRANCH_NAME-$BUILD_NUMBER")
                             dockerImage.push("latest")
                         }
                     }
