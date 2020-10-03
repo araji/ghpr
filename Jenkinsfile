@@ -15,7 +15,7 @@ pipeline {
         }
         
 
-      stage('Security Scanning") {
+      stage('Security Scanning') {
          parallel {
              steps {
                 script {
