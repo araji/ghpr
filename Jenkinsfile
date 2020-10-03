@@ -13,27 +13,27 @@ pipeline {
                 }   
             }
         }
-        
 
       stage('Security Scanning') {
-         parallel {
-             steps {
-                script {
-                    echo "running trivy"
-                    sh '''
+          parallel {
+              stage('Trivy Analysis') {
+                  steps {
+                      echo "running trivy"
+                      sh '''
                         sleep 30
-                    '''
-                }   
-            steps {
-                script {
-                    echo "Running Anchore"
-                    sh '''
-                        sleep 10
-                    '''
+                        '''
+                    }
+              }   
+                stage('Anchore Analysis') {
+                  steps {
+                      echo "running trivy"
+                      sh '''
+                        sleep 30
+                        '''
+                    }
                 }
-            }
-        }
-  
+          }
+      }
         stage('Push Container') {
             steps {
                 echo "workspace is $WORKSPACE"
@@ -45,7 +45,7 @@ pipeline {
                         }
                     }
                 }
-            }`
+            }
         }
     }
 }
