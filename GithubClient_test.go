@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 )
 
-const (
-	testAPIServer string = "localhost"
+var (
 	testGitOwner  string = "testowner"
 	testGitRepo   string = "testrepo"
 	testGitToken  string = "ABCDEFGHIJK123LMNO"
@@ -26,7 +28,6 @@ func TestMissingEnv(t *testing.T) {
 		defaultValue string
 	}{
 		{"webhook present", "SLACK_WEBHOOK", "WEBHOOK"},
-		//{"api_server present", "GIT_API_SERVER", "SERVER"},
 		{"git token present ", "GIT_TOKEN", "TOKEN"},
 		{"git owner present ", "GIT_OWNER", "OWNER"},
 		{"git repo present ", "GIT_REPO", "REPO"},
@@ -47,38 +48,122 @@ func TestMissingEnv(t *testing.T) {
 	}
 }
 func TestBadAuth(t *testing.T) {
-	fmt.Println("testing something")
-	t.Errorf("failed miserably....")
-
+	fmt.Println("not implemented")
 }
 
-//origial implementation in  http://www.inanzzz.com/index.php/post/fb0m/mocking-and-testing-http-clients-in-golang
-func TestValidPullRequest(t *testing.T) {
-	srv := fakeServer()
-	defer srv.Close()
-
+func TestValidMultipleRequests(t *testing.T) {
+	testGitRepo = "all"
+	ts := fakeServer(testGitOwner, testGitRepo)
+	defer ts.Close()
+	testAPIServer := ts.URL
+	os.Setenv("GIT_API_SERVER", testAPIServer)
 	ghc := CreateGithubClient(testAPIServer, testGitOwner, testGitRepo, testGitToken)
 	over, under, err := ghc.GetPushRequests(testThreshold * 24)
 	if err != nil {
-		t.Fatalf("testing valid pullrewquest parsing failed : %v", err)
+		t.Fatalf("testing full pull request parsing failed : %v", err)
+	}
+	if len(over)+len(under) != 30 {
+		t.Errorf("expected %d PR's but got %d", 30, len(over)+len(under))
+	}
+}
+func TestValidOnePullRequest(t *testing.T) {
+	testGitRepo = "one"
+	ts := fakeServer(testGitOwner, testGitRepo)
+	defer ts.Close()
+	testAPIServer := ts.URL
+	os.Setenv("GIT_API_SERVER", testAPIServer)
+	ghc := CreateGithubClient(testAPIServer, testGitOwner, testGitRepo, testGitToken)
+	over, under, err := ghc.GetPushRequests(testThreshold * 24)
+	if err != nil {
+		t.Fatalf("testing valid pull request parsing failed : %v", err)
+	}
+	if len(over)+len(under) != 1 {
+		t.Errorf("expected %d PR's but got %d", 1, len(over)+len(under))
 	}
 	fmt.Printf("length %d, %d ", len(over), len(under))
 }
 
-//TODO: multiple page
-//TODO: add ssl ?
-func fakeServer(owner, repo string) *httptest.Server {
-	url := fmt.Sprintf("http://%s/repos/%s/%s/pulls", "localhost", owner, repo)
-	handler := http.NewServeMux()
-	handler.HandleFunc(url, pullRequests)
-	srv := httptest.NewServer(handler)
+func TestBadRepo(t *testing.T) {
+	testGitRepo = "norepo"
+	ts := fakeServer(testGitOwner, testGitRepo)
+	defer ts.Close()
+	testAPIServer := ts.URL
+	os.Setenv("GIT_API_SERVER", testAPIServer)
+	ghc := CreateGithubClient(testAPIServer, testGitOwner, testGitRepo, testGitToken)
+	_, _, err := ghc.GetPushRequests(testThreshold * 24)
+	if err == nil {
+		t.Errorf("expected an error for repositoruy not found")
+	}
 
+}
+func TestNoPullRequest(t *testing.T) {
+	testGitRepo = "none"
+	ts := fakeServer(testGitOwner, testGitRepo)
+	defer ts.Close()
+	testAPIServer := ts.URL
+	os.Setenv("GIT_API_SERVER", testAPIServer)
+	ghc := CreateGithubClient(testAPIServer, testGitOwner, testGitRepo, testGitToken)
+	over, under, err := ghc.GetPushRequests(testThreshold * 24)
+	if err != nil {
+		t.Fatalf("testing valid pull request parsing failed : %v", err)
+	}
+	if len(over)+len(under) != 0 {
+		t.Errorf("expected %d PR's but got %d", 0, len(over)+len(under))
+	}
+	fmt.Printf("length %d, %d ", len(over), len(under))
+}
+
+func fakeServer(owner, repo string) *httptest.Server {
+	url := fmt.Sprintf("/repos/%s/%s/pulls/", owner, repo)
+	mux := http.NewServeMux()
+	mux.HandleFunc(url, pullRequest)
+	srv := httptest.NewServer(mux)
 	return srv
 }
 
-//TODO: make the request tell us about what the response should be
-func pullRequests(w http.ResponseWriter, r *http.Request) {
-	//load the test response and send it as a json payload
-
-	_, _ = w.Write([]byte(r.Header.Get("FakeResponse")))
+//TODO: test multiple page
+//TODO: add tls support
+func pullRequest(w http.ResponseWriter, r *http.Request) {
+	var fid *os.File
+	var err error
+	fragments := strings.Split(r.URL.Path, "/")
+	// -3 to get the folder before last
+	base := fragments[len(fragments)-3]
+	switch base {
+	case "none":
+		{
+			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Link", "rel=\"next\"")
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte("[]"))
+			return
+		}
+	case "one":
+		{
+			fid, err = os.Open("testdata/pr1.json")
+			if err != nil {
+				log.Fatalf("unable to open file , error = %s", err)
+			}
+		}
+	case "all":
+		{
+			fid, err = os.Open("testdata/pr.json")
+			if err != nil {
+				log.Fatalf("unable to open file , error = %s", err)
+			}
+		}
+	default:
+		{
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+	}
+	data, err := ioutil.ReadAll(fid)
+	if err != nil {
+		log.Fatalf("unable to open file , error = %s", err)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Link", "rel=\"next\"")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
 }

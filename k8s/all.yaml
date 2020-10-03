@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghpr-deployment
+  labels:
+    app: ghpr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghpr
+  template:
+    metadata:
+      labels:
+        app: ghpr
+    spec:
+      containers:
+      - name: ghpr
+        image: araji/ghpr:latest
+        

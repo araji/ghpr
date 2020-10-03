@@ -38,7 +38,7 @@ func CheckEnvironment() error {
 	pollPeriod, pexists := os.LookupEnv("POLL_PERIOD")
 
 	if !aexists {
-		GitAPIServer = "api.github.com"
+		GitAPIServer = "https://api.github.com"
 	}
 	if !sexists || !gexists || !rexists || !texists || !pexists || !tokexists {
 		fmt.Printf("OWNER=%s, REPO= %s, Threshold= %s, POLL= %s, WEBHOOK=%s,Token = %s\n", GitOwner, GitRepo, threshold, pollPeriod, SlackWebhook, GitToken)

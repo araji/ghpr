@@ -13,6 +13,26 @@ pipeline {
                 }   
             }
         }
+
+      stage('Security Scanning") {
+         parallel {
+             steps {
+                script {
+                    echo "running trivy"
+                    sh '''
+                        trivy -d -i dockerImage
+                    '''
+                }   
+            steps {
+                script {
+                    echo "Running Anchore"
+                    sh '''
+                        trivy -d -i dockerImage
+                    '''
+                }
+            }
+        }
+  
         stage('Push Container') {
             steps {
                 echo "workspace is $WORKSPACE"
@@ -24,7 +44,7 @@ pipeline {
                         }
                     }
                 }
-            }
+            }`
         }
     }
 }

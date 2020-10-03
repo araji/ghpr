@@ -54,14 +54,14 @@ func (ghc *GHClient) GetPushRequests(threshold int) (over, under map[int]GHPR, e
 
 	var lastPage bool = false
 	now := time.Now()
-	log.Printf("checking repo: github.com/%s/%s\n ", ghc.owner, ghc.repo)
+	log.Printf("checking repo: %s/%s/%s\n ", ghc.apiServer, ghc.owner, ghc.repo)
 
 	for lastPage == false {
 
-		url := fmt.Sprintf("https://%s/repos/%s/%s/pulls?per_page=%d&page=%d", ghc.apiServer, ghc.owner, ghc.repo, ppage, pageNumber)
+		url := fmt.Sprintf("%s/repos/%s/%s/pulls?per_page=%d&page=%d", ghc.apiServer, ghc.owner, ghc.repo, ppage, pageNumber)
 		resp, err := ghc.Client.Get(url)
 		if err != nil || resp.StatusCode != http.StatusOK {
-			log.Println("unable to get request")
+			log.Printf("unable to get request, code = %d , err = %v \n", resp.StatusCode, err)
 			err = fmt.Errorf("Failed to fetch data from url %s ", url)
 			return nil, nil, err
 		}
