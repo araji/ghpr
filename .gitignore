@@ -1,4 +1,4 @@
 .git
 ghpr
 *.json
-
+*.test

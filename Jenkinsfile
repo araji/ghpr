@@ -13,6 +13,7 @@ pipeline {
                 }   
             }
         }
+        
 
       stage('Security Scanning") {
          parallel {
@@ -20,14 +21,14 @@ pipeline {
                 script {
                     echo "running trivy"
                     sh '''
-                        trivy -d -i dockerImage
+                        sleep 30
                     '''
                 }   
             steps {
                 script {
                     echo "Running Anchore"
                     sh '''
-                        trivy -d -i dockerImage
+                        sleep 10
                     '''
                 }
             }
