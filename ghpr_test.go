@@ -48,7 +48,7 @@ func TestMissingEnv(t *testing.T) {
 	}
 }
 func TestBadAuth(t *testing.T) {
-	fmt.Println("not implemented")
+	//fmt.Println("not implemented")
 }
 
 func TestValidMultipleRequests(t *testing.T) {
@@ -80,7 +80,7 @@ func TestValidOnePullRequest(t *testing.T) {
 	if len(over)+len(under) != 1 {
 		t.Errorf("expected %d PR's but got %d", 1, len(over)+len(under))
 	}
-	fmt.Printf("length %d, %d ", len(over), len(under))
+	//fmt.Printf("length %d, %d ", len(over), len(under))
 }
 
 func TestBadRepo(t *testing.T) {

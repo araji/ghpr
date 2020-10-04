@@ -41,8 +41,8 @@ func CheckEnvironment() error {
 		GitAPIServer = "https://api.github.com"
 	}
 	if !sexists || !gexists || !rexists || !texists || !pexists || !tokexists {
-		fmt.Printf("OWNER=%s, REPO= %s, Threshold= %s, POLL= %s, WEBHOOK=%s,Token = %s\n", GitOwner, GitRepo, threshold, pollPeriod, SlackWebhook, GitToken)
-		return fmt.Errorf("one of the required environment variables is not set ")
+		envvars := fmt.Sprintf("API= %s, OWNER=%s, REPO= %s, Threshold= %s, POLL= %s, WEBHOOK=%s,Token = %s\n", GitAPIServer, GitOwner, GitRepo, threshold, pollPeriod, SlackWebhook, GitToken)
+		return fmt.Errorf("one of the required environment variables is not set : \n\t%s ", envvars)
 	}
 	_, ok := strconv.Atoi(threshold)
 	if ok != nil {
@@ -52,7 +52,7 @@ func CheckEnvironment() error {
 	if ok != nil || PollPeriod == 0 {
 		return fmt.Errorf("pollPeriod should be set to number of minutes between two polls and greater than 0 , got :%s", pollPeriod)
 	}
-	fmt.Printf("API = %s OWNER=%s, REPO= %s, Threshold= %s, POLL= %s ,WEBHOOK=%s\n", GitAPIServer, GitOwner, GitRepo, threshold, pollPeriod, SlackWebhook)
+	//fmt.Printf("API = %s OWNER=%s, REPO= %s, Threshold= %s, POLL= %s ,WEBHOOK=%s\n", GitAPIServer, GitOwner, GitRepo, threshold, pollPeriod, SlackWebhook)
 
 	return nil
 }

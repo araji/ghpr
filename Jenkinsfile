@@ -1,19 +1,34 @@
 pipeline {
     environment {
         imageName = "araji/ghpr"
+        testImage = "araji/ghpr-test"
         dockerImage = ''
+        dockerTestImage = ''
     }
     agent any
     stages {
+       
       stage('Docker Build') {
          steps {
              script {
-                echo "build image"
+                echo "build prod image"
                 dockerImage  = docker.build imageName
-                }   
-            }
+                }  
+             script {
+                echo "build test image"
+                def mytest = docker.build(testImage, "--target builder .")
+                }  
         }
+      }
+    stage('Run Tests'){
+          agent {
+              docker {image 'araji/ghpr-test'}
+          }
+          steps{
+              sh 'cd /build;GOCACHE=/tmp go test  -v . '
 
+          }
+      }
       stage('Security Scanning') {
           parallel {
               stage('Trivy Analysis') {
@@ -23,10 +38,10 @@ pipeline {
                         sleep 30
                         '''
                     }
-              }   
+              }  
                 stage('Anchore Analysis') {
                   steps {
-                      echo "running trivy"
+                      echo "running Anchore"
                       sh '''
                         sleep 30
                         '''
@@ -49,3 +64,4 @@ pipeline {
         }
     }
 }
+
